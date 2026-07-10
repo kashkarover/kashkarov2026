@@ -7,7 +7,7 @@ ai_field = [[[0] for _ in range(10)] for _ in range(10)]
 def ship_direction():
     return choice(['h', 'v'])
 
-def find_random_valid_place(direction, length):
+def find_random_valid_place(direction, length, field):
     is_empty = lambda x: x == [0]
     has_ship = lambda x: x == [1]
 
@@ -271,13 +271,14 @@ def find_random_valid_place(direction, length):
 
     if attempts == 1000:
         print(f"⚠️ Не удалось найти место для корабля длиной {length} за {max_attempts} попыток")
-        #return None, None
-        exit()
+        return None, None
+        #exit()
 
     return row, column
 
 
 def field_init(field):
+    ships = {}
     ship_four_direction = ship_direction()
 
     if ship_four_direction == 'h':
@@ -285,25 +286,36 @@ def field_init(field):
         char = randint(0, 6)
         for i in range(char, char + 4):
             field[num][i] = [1]
+            ships.setdefault(41, []).append((i, num))
     else:
         num = randint(0, 6)
         char = randint(0, 9)
         for i in range(num, num + 4):
             field[i][char] = [1]
+            ships.setdefault(41, []).append((char, i))
 
     for i in range(3, 0, -1):
         for j in range(i, 5):
             direction = ship_direction()
             if direction == 'h':
-                num, char = find_random_valid_place(direction, i)            
+                num, char = find_random_valid_place(direction, i, field)
+                if None in [num, char]:
+                    print('Перезапуск...')
+                    field = [[[0] for _ in range(10)] for _ in range(10)]
+                    return field_init(field)           
                 for k in range(char, char + i):
                     field[num][k] = [1]
+                    ships.setdefault(i * 10 + j - i + 1, []).append((k, num))
             else:
-                num, char = find_random_valid_place(direction, i)
+                num, char = find_random_valid_place(direction, i, field)
+                if None in [num, char]:
+                    print('Перезапуск...')
+                    field = [[[0] for _ in range(10)] for _ in range(10)]
+                    return field_init(field) 
                 for k in range(num, num + i):
                     field[k][char] = [1]
-        
-field_init(field)
+                    ships.setdefault(i * 10 + j - i + 1, []).append((char, k))
+    return ships
 
 def field_draw(field):
     print('\033[36m', '  ','A', '', 'B', '', 'C', '', 'D', '', 'E', '', 'F', '', 'G', '', 'H', '', 'I', '', 'J', '\033[0m')
@@ -320,4 +332,9 @@ def field_draw(field):
                 print(field[i][j], end='') 
         print()
 
+my_ships = field_init(field)
+print(my_ships)
 field_draw(field)
+ai_ships = field_init(ai_field)
+print(ai_ships)
+field_draw(ai_field)
