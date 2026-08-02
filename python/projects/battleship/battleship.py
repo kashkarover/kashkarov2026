@@ -1,4 +1,6 @@
 from random import *
+import os
+import time
 
 field = [[[0] for _ in range(10)] for _ in range(10)]
 field_check = [[[0] for _ in range(10)] for _ in range(10)]
@@ -328,13 +330,112 @@ def field_draw(field):
         for j in range(10):
             if field[i][j] == [1]:
                 print('\033[32m', field[i][j], '\033[0m', sep='', end='')
+            elif field[i][j] == [2]:
+                            print('\033[33m', field[i][j], '\033[0m', sep='', end='')
+            elif field[i][j] == [7]:
+                            print('\033[34m', field[i][j], '\033[0m', sep='', end='')            
             else:
                 print(field[i][j], end='') 
         print()
 
+def start():
+    os.system('cls')
+    print('Добро пожаловать в Морской Бой. Чтобы начать игру, напишите "старт/start". Чтобы выйти из игры напишите "выход/exit"')
+    while True:
+        start = input()
+        if start.lower() in ['старт', 'start']:
+            os.system('cls')
+            play()
+            break
+        elif start.lower() in ['exit', 'выход']:
+            print('До свидания!')
+            exit()
+        else:
+            print('Введите "старт/start" или "выход/exit"')
+
 my_ships = field_init(field)
-print(my_ships)
-field_draw(field)
 ai_ships = field_init(ai_field)
-print(ai_ships)
-field_draw(ai_field)
+
+def render_fields():
+    print(my_ships)
+    print('   ' + '-' * 30)
+    print('   ---------Ваши корабли---------')
+    print('   ' + '-' * 30)
+    field_draw(field)
+    print('   ' + '-' * 30)
+    print('   -------Поле для заметок-------')
+    print('   ' + '-' * 30)
+    field_draw(field_check)
+
+    print(ai_ships)
+    field_draw(ai_field)
+
+def play():
+    print('Инициализация игрового поля...')
+    render_fields()
+
+    who_is_first = choice(['player', 'ai'])
+
+    print('Игровое поле создано. Определяю кто начнет первым...')
+    if who_is_first == 'player':
+        print('Вы ходите первым.')
+        player_turn()
+    else:
+        print('Противник ходит первым.')
+        ai_turn()
+
+def player_turn():
+    print('Введите координаты для удара (например: "b 4"):')
+    while True:
+        coords = input().split()
+        if len(coords) > 4 or len(coords) < 2:
+            print('Введите правильные координаты!')
+            player_turn()
+        elif coords[0].lower() not in 'abcdefghij':
+            print('Введите правильную букву столбца!')
+            player_turn()
+        elif int(coords[1]) not in range(1, 11):
+            print('Введите правильное число строки!')
+            player_turn()
+        else:
+            hit_check('player', coords)
+
+def ai_turn():
+    time.sleep(2)
+    coords = [choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']), choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])]
+    hit_check('ai', coords)
+
+def hit_check(who, coordinates):
+    col, row = coordinates
+
+    if who == 'player':
+        if ai_field[int(row) - 1][ord(col) - 97] == [1]:
+            os.system('cls')
+            print('Вы попали по противнику!')
+            print('Ваш ход.')
+            field_check[int(row) - 1][ord(col) - 97] = [2]
+            render_fields()
+            player_turn()
+        else:
+            os.system('cls')
+            print('Вы промахнулись!')
+            print('Ход противника.')
+            field_check[int(row) - 1][ord(col) - 97] = [7]
+            render_fields()
+            ai_turn()
+    else:
+        if field[int(row) - 1][ord(col) - 97] == [1]:
+            os.system('cls')
+            print('Противник попал по вам!')
+            print('Ход противника.')
+            field[int(row) - 1][ord(col) - 97] = [2]
+            render_fields()
+            ai_turn()
+        else:
+            os.system('cls')
+            print('Противник промахнулся!')
+            print('Ваш ход.')
+            render_fields()
+            player_turn()        
+
+start()
