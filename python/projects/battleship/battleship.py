@@ -331,16 +331,21 @@ def field_draw(field):
             if field[i][j] == [1]:
                 print('\033[32m', field[i][j], '\033[0m', sep='', end='')
             elif field[i][j] == [2]:
-                            print('\033[33m', field[i][j], '\033[0m', sep='', end='')
+                print('\033[1;33m', field[i][j], '\033[0m', sep='', end='')
             elif field[i][j] == [7]:
-                            print('\033[34m', field[i][j], '\033[0m', sep='', end='')            
+                print('\033[2;36;46m', field[i][j], '\033[0m', sep='', end='')
+            elif field[i][j] == [5]:
+                print('\033[1;9;31m', field[i][j], '\033[0m', sep='', end='')          
             else:
-                print(field[i][j], end='') 
+                print('\033[3;90;46m', field[i][j], '\033[0m', sep='', end='')
+                #print(field[i][j], end='') 
         print()
 
 def start():
     os.system('cls')
     print('Добро пожаловать в Морской Бой. Чтобы начать игру, напишите "старт/start". Чтобы выйти из игры напишите "выход/exit"')
+    for value in ai_ships.values():
+        print(value)
     while True:
         start = input()
         if start.lower() in ['старт', 'start']:
@@ -355,6 +360,9 @@ def start():
 
 my_ships = field_init(field)
 ai_ships = field_init(ai_field)
+player_hits = {}
+ai_hits = {}
+ai_coords = []
 
 def render_fields():
     print(my_ships)
@@ -402,40 +410,84 @@ def player_turn():
 
 def ai_turn():
     time.sleep(2)
-    coords = [choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']), choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])]
-    hit_check('ai', coords)
+    while True:
+        coords = [choice(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']), choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])]
+        x, y = coords
+        col, row = ord(x) - 97, int(y) - 1
+        
+        if (col, row) not in ai_coords:
+            ai_coords.append((col, row))
+            hit_check('ai', coords)
+            break
+
+def ai_logic():
+    pass
 
 def hit_check(who, coordinates):
-    col, row = coordinates
+    x, y = coordinates
+    col, row = ord(x) - 97, int(y) - 1
 
     if who == 'player':
-        if ai_field[int(row) - 1][ord(col) - 97] == [1]:
-            os.system('cls')
-            print('Вы попали по противнику!')
-            print('Ваш ход.')
-            field_check[int(row) - 1][ord(col) - 97] = [2]
-            render_fields()
-            player_turn()
+        for key, value in ai_ships.items():
+            if (col, row) in value:
+                player_hits.setdefault(key, []).append((col, row))
+                if len(player_hits[key]) == key // 10:
+                    for i in range(key // 10):
+                        a, b = player_hits[key][i]
+                        field_check[b][a] = [5]
+                    os.system('cls')
+                    print(player_hits)
+                    print('Вы уничтожили корабль противника!')
+                    print('Ваш ход.')
+                    render_fields()
+                    player_turn()
+                else:
+                    os.system('cls')
+                    print(player_hits)
+                    field_check[row][col] = [2]
+                    print('Вы попали по противнику!')
+                    print('Ваш ход.')
+                    render_fields()
+                    player_turn()
+                break
         else:
             os.system('cls')
+            print(player_hits)
             print('Вы промахнулись!')
             print('Ход противника.')
-            field_check[int(row) - 1][ord(col) - 97] = [7]
+            field_check[row][col] = [7]
             render_fields()
             ai_turn()
     else:
-        if field[int(row) - 1][ord(col) - 97] == [1]:
-            os.system('cls')
-            print('Противник попал по вам!')
-            print('Ход противника.')
-            field[int(row) - 1][ord(col) - 97] = [2]
-            render_fields()
-            ai_turn()
+        for key, value in my_ships.items():
+            if (col, row) in value:
+                ai_hits.setdefault(key, []).append((col, row))
+                if len(ai_hits[key]) == key // 10:
+                    for i in range(key // 10):
+                        a, b = ai_hits[key][i]
+                        field[b][a] = [5]
+                    os.system('cls')
+                    print(ai_hits)
+                    print('Противник уничтожил ваш корабль')
+                    print('Ход противника.')
+                    render_fields()
+                    ai_turn()
+                else:
+                    os.system('cls')
+                    print(ai_hits)
+                    field[row][col] = [2]
+                    print('Противник попал по вам!')
+                    print('Ход противника.')
+                    render_fields()
+                    ai_turn()
+                break
         else:
             os.system('cls')
+            print(ai_hits)
             print('Противник промахнулся!')
             print('Ваш ход.')
+            field[row][col] = [7]
             render_fields()
-            player_turn()        
+            player_turn()      
 
 start()
